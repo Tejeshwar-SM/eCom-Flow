@@ -14,7 +14,7 @@ const connectDatabase = async (): Promise<void> => {
     });
     
     mongoose.connection.on('disconnected', () => {
-      console.log('🔌 MongoDB disconnected');
+      console.log('MongoDB disconnected');
     });
     
   } catch (error) {

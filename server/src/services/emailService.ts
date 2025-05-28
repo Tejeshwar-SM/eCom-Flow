@@ -50,7 +50,7 @@ export class EmailService {
       <body>
         <div class="container">
           <div class="header">
-            <h1>${isApproved ? '✅ Order Confirmed' : '❌ Order Failed'}</h1>
+            <h1>${isApproved ? 'Order Confirmed' : 'Order Failed'}</h1>
             <p>Order #${order.orderNumber}</p>
           </div>
           
