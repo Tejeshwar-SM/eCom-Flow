@@ -1,52 +1,32 @@
-import { Router, Request, Response, NextFunction } from 'express';
-import { ProductModel } from '../models/Product';
-import { createError } from '../middleware/errorHandler';
-import Joi from 'joi';
-import { validateParams } from '../middleware/validation';
+import express from 'express';
+import {
+  getProducts,
+  getProduct,
+  checkAvailability,
+  updateInventory
+} from '../controllers/productController';
+import { validateProduct, validateAvailability, validateInventoryUpdate } from '../middleware/validation';
 
-const router = Router();
+const router = express.Router();
 
-// Validation schemas
-const productParamsSchema = Joi.object({
-  id: Joi.string().hex().length(24).required()
-});
+// @route   GET /api/products
+// @desc    Get all products with optional filtering
+// @access  Public
+router.get('/', getProducts);
 
-// GET /api/products - Get all products
-router.get('/', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const products = await ProductModel.find({}).sort({ createdAt: -1 });
-    
-    res.json({
-      success: true,
-      data: products,
-      count: products.length
-    });
-  } catch (error) {
-    next(createError('Failed to fetch products', 500));
-  }
-});
+// @route   GET /api/products/:id
+// @desc    Get single product by ID
+// @access  Public
+router.get('/:id', validateProduct, getProduct);
 
-// GET /api/products/:id - Get single product
-router.get(
-  '/:id',
-  validateParams(productParamsSchema),
-  async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const { id } = req.params;
-      const product = await ProductModel.findById(id);
-      
-      if (!product) {
-        return next(createError('Product not found', 404));
-      }
-      
-      res.json({
-        success: true,
-        data: product
-      });
-    } catch (error) {
-      next(createError('Failed to fetch product', 500));
-    }
-  }
-);
+// @route   POST /api/products/:id/check-availability
+// @desc    Check product availability for given quantity and variants
+// @access  Public
+router.post('/:id/check-availability', validateProduct, validateAvailability, checkAvailability);
+
+// @route   PUT /api/products/:id/inventory
+// @desc    Update product inventory (internal use)
+// @access  Private
+router.put('/:id/inventory', validateProduct, validateInventoryUpdate, updateInventory);
 
 export default router;

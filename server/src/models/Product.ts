@@ -1,52 +1,103 @@
 import mongoose, { Schema, Document } from 'mongoose';
-import { Product as IProduct, Variant } from '../types/product';
+import { IProduct, IVariant } from '../types';
 
-interface ProductDocument extends Omit<IProduct, '_id'>, Document {}
+interface IProductDocument extends IProduct, Document {}
 
-const variantSchema = new Schema<Variant>({
+const VariantSchema = new Schema<IVariant>({
   type: {
     type: String,
-    enum: ['color', 'size', 'style'],
+    enum: ['color', 'size'],
     required: true
   },
-  name: {
-    type: String,
-    required: true
-  },
-  options: [{
-    type: String,
-    required: true
-  }]
-});
-
-const productSchema = new Schema<ProductDocument>({
   name: {
     type: String,
     required: true,
     trim: true
   },
-  description: {
+  value: {
     type: String,
-    required: true
-  },
-  price: {
-    type: Number,
     required: true,
-    min: 0
+    trim: true
   },
-  image: {
-    type: String,
-    required: true
-  },
-  variants: [variantSchema],
-  inventory: {
+  stock: {
     type: Number,
     required: true,
     min: 0,
     default: 0
   }
+}, { _id: false });
+
+const ProductSchema = new Schema<IProductDocument>({
+  name: {
+    type: String,
+    required: [true, 'Product name is required'],
+    trim: true,
+    maxlength: [100, 'Product name cannot exceed 100 characters']
+  },
+  description: {
+    type: String,
+    required: [true, 'Product description is required'],
+    trim: true,
+    maxlength: [1000, 'Description cannot exceed 1000 characters']
+  },
+  price: {
+    type: Number,
+    required: [true, 'Product price is required'],
+    min: [0, 'Price cannot be negative']
+  },
+  image: {
+    type: String,
+    required: [true, 'Product image is required'],
+    trim: true
+  },
+  variants: {
+    type: [VariantSchema],
+    default: []
+  },
+  inventory: {
+    type: Number,
+    required: true,
+    min: [0, 'Inventory cannot be negative'],
+    default: 0
+  },
+  category: {
+    type: String,
+    required: [true, 'Product category is required'],
+    trim: true
+  },
+  isActive: {
+    type: Boolean,
+    default: true
+  }
 }, {
-  timestamps: true
+  timestamps: true,
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true }
 });
 
-export const ProductModel = mongoose.model<ProductDocument>('Product', productSchema);
+// Indexes for better query performance
+ProductSchema.index({ name: 1 });
+ProductSchema.index({ category: 1 });
+ProductSchema.index({ isActive: 1 });
+ProductSchema.index({ price: 1 });
+
+// Virtual for total stock across all variants
+ProductSchema.virtual('totalVariantStock').get(function() {
+  return this.variants.reduce((total, variant) => total + variant.stock, 0);
+});
+
+// Method to check if product is in stock
+ProductSchema.methods.isInStock = function(quantity: number = 1): boolean {
+  return this.inventory >= quantity;
+};
+
+// Method to reduce inventory
+ProductSchema.methods.reduceInventory = function(quantity: number): boolean {
+  if (this.inventory >= quantity) {
+    this.inventory -= quantity;
+    return true;
+  }
+  return false;
+};
+
+export default mongoose.model<IProductDocument>('Product', ProductSchema);

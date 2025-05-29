@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Failed</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f4f4f4;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #EF4444, #DC2626);
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        
+        .header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 40px 30px;
+        }
+        
+        .greeting {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: #1F2937;
+        }
+        
+        .alert-section {
+            background: #FEF2F2;
+            border: 1px solid #FECACA;
+            border-left: 4px solid #EF4444;
+            border-radius: 8px;
+            padding: 25px;
+            margin: 25px 0;
+        }
+        
+        .alert-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #991B1B;
+            margin-bottom: 10px;
+        }
+        
+        .alert-message {
+            color: #7F1D1D;
+            font-size: 16px;
+        }
+        
+        .order-section {
+            background: #F9FAFB;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            padding: 25px;
+            margin: 25px 0;
+        }
+        
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1F2937;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #6B7280;
+            padding-bottom: 5px;
+        }
+        
+        .order-info {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 8px 0;
+        }
+        
+        .order-info strong {
+            color: #374151;
+        }
+        
+        .retry-section {
+            background: #F0F9FF;
+            border: 1px solid #BAE6FD;
+            border-radius: 8px;
+            padding: 25px;
+            margin: 25px 0;
+            text-align: center;
+        }
+        
+        .retry-button {
+            display: inline-block;
+            background: #3B82F6;
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 16px;
+            margin: 15px 0;
+            transition: background-color 0.3s ease;
+        }
+        
+        .retry-button:hover {
+            background: #2563EB;
+        }
+        
+        .help-section {
+            background: #FFFBEB;
+            border: 1px solid #FED7AA;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 25px 0;
+        }
+        
+        .help-section h3 {
+            color: #92400E;
+            margin-bottom: 10px;
+        }
+        
+        .help-section ul {
+            color: #A16207;
+            font-size: 14px;
+            margin-left: 20px;
+        }
+        
+        .help-section li {
+            margin: 8px 0;
+        }
+        
+        .footer {
+            background: #F9FAFB;
+            padding: 30px 20px;
+            text-align: center;
+            border-top: 1px solid #E5E7EB;
+        }
+        
+        .footer h3 {
+            color: #EF4444;
+            margin-bottom: 10px;
+        }
+        
+        .footer p {
+            color: #6B7280;
+            font-size: 14px;
+            margin: 5px 0;
+        }
+        
+        .contact-info {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #E5E7EB;
+        }
+        
+        @media only screen and (max-width: 600px) {
+            .container {
+                margin: 0;
+                box-shadow: none;
+            }
+            
+            .content {
+                padding: 20px 15px;
+            }
+            
+            .order-section, .retry-section, .help-section {
+                padding: 15px;
+            }
+            
+            .order-info {
+                flex-direction: column;
+                gap: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>❌ Payment Failed</h1>
+            <p>We couldn't process your payment</p>
+        </div>
+        
+        <!-- Content -->
+        <div class="content">
+            <div class="greeting">
+                Hi {{customerName}},
+            </div>
+            
+            <p>We're sorry to inform you that we encountered an issue while processing your payment for your recent order.</p>
+            
+            <!-- Alert Section -->
+            <div class="alert-section">
+                <div class="alert-title">🚫 Payment Processing Failed</div>
+                <div class="alert-message">
+                    <strong>Reason:</strong> {{failureReason}}
+                </div>
+            </div>
+            
+            <!-- Order Details -->
+            <div class="order-section">
+                <h3 class="section-title">📋 Order Details</h3>
+                
+                <div class="order-info">
+                    <span><strong>Order Number:</strong></span>
+                    <span>{{orderNumber}}</span>
+                </div>
+                
+                <div class="order-info">
+                    <span><strong>Product:</strong></span>
+                    <span>{{productName}}</span>
+                </div>
+                
+                <div class="order-info">
+                    <span><strong>Amount:</strong></span>
+                    <span>${{total}}</span>
+                </div>
+                
+                <div class="order-info">
+                    <span><strong>Status:</strong></span>
+                    <span style="color: #DC2626; font-weight: 600;">❌ Payment Failed</span>
+                </div>
+            </div>
+            
+            <!-- Retry Section -->
+            <div class="retry-section">
+                <h3 style="color: #1F2937; margin-bottom: 15px;">🔄 Try Again</h3>
+                <p>Don't worry! You can easily place your order again with a different payment method.</p>
+                <a href="{{websiteUrl}}" class="retry-button">Place Order Again</a>
+                <p style="font-size: 14px; color: #6B7280; margin-top: 10px;">
+                    Your items are still available and waiting for you.
+                </p>
+            </div>
+            
+            <!-- Help Section -->
+            <div class="help-section">
+                <h3>💡 Common Solutions</h3>
+                <ul>
+                    <li>Check that your card details are entered correctly</li>
+                    <li>Ensure your card has sufficient funds available</li>
+                    <li>Try using a different payment method</li>
+                    <li>Contact your bank if the issue persists</li>
+                    <li>Clear your browser cache and try again</li>
+                </ul>
+            </div>
+            
+            <p>If you continue to experience difficulties, our customer support team is here to help you complete your purchase.</p>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <h3>We're Here to Help! 🤝</h3>
+            <p>Our customer support team is ready to assist you with your purchase.</p>
+            
+            <div class="contact-info">
+                <p><strong>Get Support:</strong></p>
+                <p>📧 Email: support@ecommerce.com</p>
+                <p>📞 Phone: 1-800-ECOMMERCE</p>
+                <p>💬 Live Chat: Available on our website</p>
+                <p>🌐 Website: {{websiteUrl}}</p>
+            </div>
+            
+            <p style="margin-top: 20px; font-size: 12px; color: #9CA3AF;">
+                This email was sent to {{customerEmail}}. We apologize for any inconvenience caused.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

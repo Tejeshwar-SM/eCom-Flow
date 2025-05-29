@@ -1,58 +1,43 @@
-import { Router, Request, Response, NextFunction } from 'express';
-import { OrderService } from '../services/orderService';
-import { createError } from '../middleware/errorHandler';
-import { validateParams } from '../middleware/validation';
-import Joi from 'joi';
+import express from 'express';
+import {
+  createOrder,
+  getAllOrders,
+  getOrder,
+  getOrderById,
+  updateOrderStatus
+} from '../controllers/orderController';
+import { 
+  validateCreateOrder, 
+  validateOrderNumber, 
+  validateOrderId,
+  validateOrderStatus 
+} from '../middleware/validation';
 
-const router = Router();
-const orderService = new OrderService();
+const router = express.Router();
 
-// Validation schemas
-const orderNumberSchema = Joi.object({
-  orderNumber: Joi.string().pattern(/^ORD-[A-Z0-9]+-[A-Z0-9]+$/).required()
-});
+// @route   GET /api/orders
+// @desc    List all orders
+// @access  Public
+router.get('/', getAllOrders);
 
-// GET /api/orders/:orderNumber - Get order by order number
-router.get(
-  '/:orderNumber',
-  validateParams(orderNumberSchema),
-  async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const { orderNumber } = req.params;
-      const order = await orderService.getOrderByNumber(orderNumber);
-      
-      if (!order) {
-        return next(createError('Order not found', 404));
-      }
-      
-      res.json({
-        success: true,
-        data: order
-      });
-    } catch (error) {
-      next(error);
-    }
-  }
-);
+// @route   POST /api/orders
+// @desc    Create new order
+// @access  Public
+router.post('/', validateCreateOrder, createOrder);
 
-// POST /api/orders/:orderNumber/resend-email - Resend order confirmation email
-router.post(
-  '/:orderNumber/resend-email',
-  validateParams(orderNumberSchema),
-  async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const { orderNumber } = req.params;
-      const emailSent = await orderService.resendOrderEmail(orderNumber);
-      
-      res.json({
-        success: true,
-        message: emailSent ? 'Email sent successfully' : 'Failed to send email',
-        data: { emailSent }
-      });
-    } catch (error) {
-      next(error);
-    }
-  }
-);
+// @route   GET /api/orders/:orderNumber
+// @desc    Get order by order number
+// @access  Public
+router.get('/:orderNumber', validateOrderNumber, getOrder);
+
+// @route   GET /api/orders/id/:id
+// @desc    Get order by MongoDB ID
+// @access  Public
+router.get('/id/:id', validateOrderId, getOrderById);
+
+// @route   PUT /api/orders/:orderNumber/status
+// @desc    Update order status
+// @access  Private
+router.put('/:orderNumber/status', validateOrderNumber, validateOrderStatus, updateOrderStatus);
 
 export default router;

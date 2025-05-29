@@ -1,32 +1,55 @@
 import { Request, Response, NextFunction } from 'express';
 
-export interface ApiError extends Error {
+export interface AppError extends Error {
   statusCode?: number;
+  status?: string;
   isOperational?: boolean;
 }
 
 export const errorHandler = (
-  err: ApiError,
+  err: AppError,
   req: Request,
   res: Response,
   next: NextFunction
 ): void => {
-  const statusCode = err.statusCode || 500;
-  const message = err.message || 'Internal Server Error';
-  
-  console.error(`❌ Error ${statusCode}: ${message}`);
-  console.error(err.stack);
-  
-  res.status(statusCode).json({
+  let error = { ...err };
+  error.message = err.message;
+
+  // Log error details
+  console.error('❌ Error:', err);
+
+  // Mongoose bad ObjectId
+  if (err.name === 'CastError') {
+    const message = 'Resource not found';
+    error = createError(message, 404);
+  }
+
+  // Mongoose duplicate key
+  if (err.name === 'MongoServerError' && (err as any).code === 11000) {
+    const message = 'Duplicate field value entered';
+    error = createError(message, 400);
+  }
+
+  // Mongoose validation error
+  if (err.name === 'ValidationError') {
+    const message = Object.values((err as any).errors).map((val: any) => val.message).join(', ');
+    error = createError(message, 400);
+  }
+
+  res.status(error.statusCode || 500).json({
     success: false,
-    error: message,
+    message: error.message || 'Server Error',
     ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
   });
 };
 
-export const createError = (message: string, statusCode: number = 500): ApiError => {
-  const error: ApiError = new Error(message);
+export const createError = (message: string, statusCode: number): AppError => {
+  const error = new Error(message) as AppError;
   error.statusCode = statusCode;
   error.isOperational = true;
   return error;
+};
+
+export const asyncHandler = (fn: Function) => (req: Request, res: Response, next: NextFunction) => {
+  Promise.resolve(fn(req, res, next)).catch(next);
 };

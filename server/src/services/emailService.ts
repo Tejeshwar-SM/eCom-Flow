@@ -1,91 +1,125 @@
-import { createMailtrapTransporter, mailtrapConfig } from '../config/mailtrap';
-import { Order } from '../types/order';
+import nodemailer from 'nodemailer';
+import { IOrder, ICustomer } from '../types';
 
-export class EmailService {
-  private transporter;
-  
+class EmailService {
+  private transporter: nodemailer.Transporter;
+
   constructor() {
-    this.transporter = createMailtrapTransporter();
+    this.transporter = nodemailer.createTransport({
+      host: process.env.MAIL_HOST || 'sandbox.smtp.mailtrap.io',
+      port: parseInt(process.env.MAIL_PORT || '2525'),
+      auth: {
+        user: process.env.MAIL_USERNAME,
+        pass: process.env.MAIL_PASSWORD
+      }
+    });
   }
-  
-  async sendOrderConfirmation(order: Order): Promise<boolean> {
+
+  async sendOrderConfirmation(order: IOrder, customer: ICustomer): Promise<void> {
+    const subject = `Order Confirmation - ${order.orderNumber}`;
+    
+    const html = this.generateSuccessEmailHTML(order, customer);
+    const text = this.generateSuccessEmailText(order, customer);
+
+    const mailOptions = {
+      from: process.env.MAIL_FROM || 'noreply@ecommerce.com',
+      to: customer.email,
+      subject,
+      html,
+      text
+    };
+
     try {
-      const subject = order.payment.transactionStatus === 'approved' 
-        ? `Order Confirmation - ${order.orderNumber}`
-        : `Order Failed - ${order.orderNumber}`;
-        
-      const html = this.generateEmailTemplate(order);
-      
-      await this.transporter.sendMail({
-        from: mailtrapConfig.sender,
-        to: order.customer.email,
-        subject,
-        html
-      });
-      
-      console.log(`✅ Email sent successfully for order: ${order.orderNumber}`);
-      return true;
+      await this.transporter.sendMail(mailOptions);
+      console.log(`✅ Order confirmation email sent to ${customer.email}`);
     } catch (error) {
-      console.error('❌ Failed to send email:', error);
-      return false;
+      console.error('❌ Failed to send confirmation email:', error);
+      throw error;
     }
   }
-  
-  private generateEmailTemplate(order: Order): string {
-    const isApproved = order.payment.transactionStatus === 'approved';
+
+  async sendOrderFailure(order: IOrder, customer: ICustomer, reason: string): Promise<void> {
+    const subject = `Order Payment Failed - ${order.orderNumber}`;
     
+    const html = this.generateFailureEmailHTML(order, customer, reason);
+    const text = this.generateFailureEmailText(order, customer, reason);
+
+    const mailOptions = {
+      from: process.env.MAIL_FROM || 'noreply@ecommerce.com',
+      to: customer.email,
+      subject,
+      html,
+      text
+    };
+
+    try {
+      await this.transporter.sendMail(mailOptions);
+      console.log(`✅ Order failure email sent to ${customer.email}`);
+    } catch (error) {
+      console.error('❌ Failed to send failure email:', error);
+      throw error;
+    }
+  }
+
+  private generateSuccessEmailHTML(order: IOrder, customer: ICustomer): string {
     return `
       <!DOCTYPE html>
       <html>
       <head>
+        <meta charset="utf-8">
+        <title>Order Confirmation</title>
         <style>
-          body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }
-          .container { max-width: 600px; margin: 0 auto; }
-          .header { background-color: ${isApproved ? '#4CAF50' : '#f44336'}; color: white; padding: 20px; text-align: center; }
-          .content { padding: 20px; background-color: #f9f9f9; }
-          .order-details { background-color: white; padding: 15px; margin: 10px 0; border-radius: 5px; }
-          .footer { text-align: center; padding: 20px; color: #666; }
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: #3B82F6; color: white; padding: 20px; text-align: center; }
+          .content { padding: 20px; background: #f9f9f9; }
+          .order-details { background: white; padding: 15px; margin: 10px 0; border-radius: 5px; }
+          .total { font-size: 18px; font-weight: bold; color: #3B82F6; }
+          .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
         </style>
       </head>
       <body>
         <div class="container">
           <div class="header">
-            <h1>${isApproved ? 'Order Confirmed' : 'Order Failed'}</h1>
-            <p>Order #${order.orderNumber}</p>
+            <h1>Order Confirmation</h1>
+            <p>Thank you for your purchase!</p>
           </div>
           
           <div class="content">
-            <div class="order-details">
-              <h3>Customer Information</h3>
-              <p><strong>Name:</strong> ${order.customer.fullName}</p>
-              <p><strong>Email:</strong> ${order.customer.email}</p>
-              <p><strong>Phone:</strong> ${order.customer.phone}</p>
-              <p><strong>Address:</strong> ${order.customer.address}, ${order.customer.city}, ${order.customer.state} ${order.customer.zipCode}</p>
-            </div>
+            <p>Hi ${customer.fullName},</p>
+            <p>Your order has been successfully processed and confirmed.</p>
             
             <div class="order-details">
-              <h3>Product Information</h3>
+              <h3>Order Details</h3>
+              <p><strong>Order Number:</strong> ${order.orderNumber}</p>
               <p><strong>Product:</strong> ${order.product.name}</p>
               <p><strong>Quantity:</strong> ${order.product.quantity}</p>
-              <p><strong>Price:</strong> $${order.product.price}</p>
-              <p><strong>Variants:</strong> ${JSON.stringify(order.product.selectedVariants)}</p>
+              <p><strong>Price:</strong> $${order.product.price.toFixed(2)}</p>
+              ${order.product.selectedVariants.length > 0 ? 
+                `<p><strong>Variants:</strong> ${order.product.selectedVariants.map(v => `${v.type}: ${v.value}`).join(', ')}</p>` 
+                : ''
+              }
+              <hr>
+              <p><strong>Subtotal:</strong> $${order.subtotal.toFixed(2)}</p>
+              <p><strong>Tax:</strong> $${order.tax.toFixed(2)}</p>
+              <p class="total">Total: $${order.total.toFixed(2)}</p>
             </div>
             
             <div class="order-details">
-              <h3>Order Total</h3>
-              <p><strong>Subtotal:</strong> $${order.totals.subtotal}</p>
-              <p><strong>Tax:</strong> $${order.totals.tax}</p>
-              <p><strong>Total:</strong> $${order.totals.total}</p>
+              <h3>Shipping Address</h3>
+              <p>
+                ${customer.fullName}<br>
+                ${customer.address.street}<br>
+                ${customer.address.city}, ${customer.address.state} ${customer.address.zipCode}<br>
+                ${customer.address.country}
+              </p>
             </div>
             
-            ${isApproved ? 
-              '<p style="color: #4CAF50;"><strong>Your order has been confirmed and will be processed shortly.</strong></p>' :
-              '<p style="color: #f44336;"><strong>Your order could not be processed. Please try again or contact support.</strong></p>'
-            }
+            <p>You will receive a shipping confirmation email once your order is dispatched.</p>
           </div>
           
           <div class="footer">
-            <p>Thank you for your business!</p>
+            <p>Thank you for shopping with us!</p>
             <p>If you have any questions, please contact our support team.</p>
           </div>
         </div>
@@ -93,4 +127,107 @@ export class EmailService {
       </html>
     `;
   }
+
+  private generateFailureEmailHTML(order: IOrder, customer: ICustomer, reason: string): string {
+    const reasonText = reason === 'declined' ? 'Your payment was declined by your bank.' :
+                      reason === 'error' ? 'There was a technical error processing your payment.' :
+                      'Payment processing failed.';
+
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Order Payment Failed</title>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: #EF4444; color: white; padding: 20px; text-align: center; }
+          .content { padding: 20px; background: #f9f9f9; }
+          .order-details { background: white; padding: 15px; margin: 10px 0; border-radius: 5px; }
+          .retry-button { background: #3B82F6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px 0; }
+          .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>Payment Failed</h1>
+            <p>We couldn't process your order</p>
+          </div>
+          
+          <div class="content">
+            <p>Hi ${customer.fullName},</p>
+            <p>Unfortunately, we were unable to process your payment for order ${order.orderNumber}.</p>
+            <p><strong>Reason:</strong> ${reasonText}</p>
+            
+            <div class="order-details">
+              <h3>Order Details</h3>
+              <p><strong>Order Number:</strong> ${order.orderNumber}</p>
+              <p><strong>Product:</strong> ${order.product.name}</p>
+              <p><strong>Total:</strong> $${order.total.toFixed(2)}</p>
+            </div>
+            
+            <p>Don't worry! You can try again by visiting our website and placing a new order.</p>
+            <a href="${process.env.CLIENT_URL}" class="retry-button">Try Again</a>
+            
+            <p>If you continue to experience issues, please contact our support team for assistance.</p>
+          </div>
+          
+          <div class="footer">
+            <p>We apologize for any inconvenience.</p>
+            <p>Support Email: support@ecommerce.com</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+  }
+
+  private generateSuccessEmailText(order: IOrder, customer: ICustomer): string {
+    return `
+      Order Confirmation - ${order.orderNumber}
+      
+      Hi ${customer.fullName},
+      
+      Your order has been successfully processed and confirmed.
+      
+      Order Details:
+      - Order Number: ${order.orderNumber}
+      - Product: ${order.product.name}
+      - Quantity: ${order.product.quantity}
+      - Total: $${order.total.toFixed(2)}
+      
+      Shipping Address:
+      ${customer.fullName}
+      ${customer.address.street}
+      ${customer.address.city}, ${customer.address.state} ${customer.address.zipCode}
+      ${customer.address.country}
+      
+      Thank you for shopping with us!
+    `;
+  }
+
+  private generateFailureEmailText(order: IOrder, customer: ICustomer, reason: string): string {
+    return `
+      Payment Failed - ${order.orderNumber}
+      
+      Hi ${customer.fullName},
+      
+      Unfortunately, we were unable to process your payment for order ${order.orderNumber}.
+      
+      Reason: ${reason}
+      
+      Order Details:
+      - Order Number: ${order.orderNumber}
+      - Product: ${order.product.name}
+      - Total: $${order.total.toFixed(2)}
+      
+      You can try again by visiting our website.
+      
+      If you continue to experience issues, please contact our support team.
+    `;
+  }
 }
+
+export const emailService = new EmailService();

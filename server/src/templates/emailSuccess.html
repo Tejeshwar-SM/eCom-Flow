@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Confirmation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f4f4f4;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #3B82F6, #1D4ED8);
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        
+        .header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 40px 30px;
+        }
+        
+        .greeting {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: #1F2937;
+        }
+        
+        .order-section {
+            background: #F9FAFB;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            padding: 25px;
+            margin: 25px 0;
+        }
+        
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1F2937;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #3B82F6;
+            padding-bottom: 5px;
+        }
+        
+        .order-info {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 8px 0;
+        }
+        
+        .order-info strong {
+            color: #374151;
+        }
+        
+        .product-info {
+            background: white;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 15px 0;
+            border-left: 4px solid #3B82F6;
+        }
+        
+        .variants {
+            background: #EEF2FF;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+        
+        .total-section {
+            background: #1F2937;
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            padding: 5px 0;
+        }
+        
+        .total-final {
+            font-size: 20px;
+            font-weight: 700;
+            border-top: 2px solid #4B5563;
+            padding-top: 10px;
+            margin-top: 10px;
+        }
+        
+        .address-section {
+            background: #F0F9FF;
+            border: 1px solid #BAE6FD;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .address-text {
+            font-size: 14px;
+            line-height: 1.5;
+            color: #374151;
+        }
+        
+        .next-steps {
+            background: #ECFDF5;
+            border: 1px solid #A7F3D0;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 25px 0;
+        }
+        
+        .next-steps h3 {
+            color: #065F46;
+            margin-bottom: 10px;
+        }
+        
+        .next-steps p {
+            color: #047857;
+            font-size: 14px;
+        }
+        
+        .footer {
+            background: #F9FAFB;
+            padding: 30px 20px;
+            text-align: center;
+            border-top: 1px solid #E5E7EB;
+        }
+        
+        .footer h3 {
+            color: #3B82F6;
+            margin-bottom: 10px;
+        }
+        
+        .footer p {
+            color: #6B7280;
+            font-size: 14px;
+            margin: 5px 0;
+        }
+        
+        .contact-info {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #E5E7EB;
+        }
+        
+        @media only screen and (max-width: 600px) {
+            .container {
+                margin: 0;
+                box-shadow: none;
+            }
+            
+            .content {
+                padding: 20px 15px;
+            }
+            
+            .order-section, .address-section, .next-steps {
+                padding: 15px;
+            }
+            
+            .order-info {
+                flex-direction: column;
+                gap: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🎉 Order Confirmed!</h1>
+            <p>Thank you for your purchase with us</p>
+        </div>
+        
+        <!-- Content -->
+        <div class="content">
+            <div class="greeting">
+                Hi {{customerName}},
+            </div>
+            
+            <p>Great news! Your order has been successfully processed and confirmed. We're excited to get your items to you as soon as possible.</p>
+            
+            <!-- Order Details -->
+            <div class="order-section">
+                <h3 class="section-title">📦 Order Details</h3>
+                
+                <div class="order-info">
+                    <span><strong>Order Number:</strong></span>
+                    <span>{{orderNumber}}</span>
+                </div>
+                
+                <div class="order-info">
+                    <span><strong>Order Date:</strong></span>
+                    <span>{{orderDate}}</span>
+                </div>
+                
+                <div class="order-info">
+                    <span><strong>Status:</strong></span>
+                    <span style="color: #059669; font-weight: 600;">✅ Confirmed</span>
+                </div>
+                
+                <!-- Product Information -->
+                <div class="product-info">
+                    <h4 style="color: #1F2937; margin-bottom: 10px;">{{productName}}</h4>
+                    <div class="order-info">
+                        <span>Quantity:</span>
+                        <span>{{quantity}}</span>
+                    </div>
+                    <div class="order-info">
+                        <span>Unit Price:</span>
+                        <span>${{unitPrice}}</span>
+                    </div>
+                    {{#if variants}}
+                    <div class="variants">
+                        <strong>Selected Options:</strong> {{variants}}
+                    </div>
+                    {{/if}}
+                </div>
+            </div>
+            
+            <!-- Total Section -->
+            <div class="total-section">
+                <h3 style="margin-bottom: 15px;">💰 Order Summary</h3>
+                
+                <div class="total-row">
+                    <span>Subtotal:</span>
+                    <span>${{subtotal}}</span>
+                </div>
+                
+                <div class="total-row">
+                    <span>Tax:</span>
+                    <span>${{tax}}</span>
+                </div>
+                
+                <div class="total-row total-final">
+                    <span>Total:</span>
+                    <span>${{total}}</span>
+                </div>
+            </div>
+            
+            <!-- Shipping Address -->
+            <div class="address-section">
+                <h3 class="section-title">🚚 Shipping Address</h3>
+                <div class="address-text">
+                    {{customerName}}<br>
+                    {{address}}
+                </div>
+            </div>
+            
+            <!-- Next Steps -->
+            <div class="next-steps">
+                <h3>📋 What's Next?</h3>
+                <p>• You'll receive a shipping confirmation email with tracking information once your order is dispatched</p>
+                <p>• Estimated delivery time: 3-5 business days</p>
+                <p>• Track your order status anytime by visiting our website</p>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <h3>Thank you for choosing us! 🙏</h3>
+            <p>We appreciate your business and hope you love your purchase.</p>
+            
+            <div class="contact-info">
+                <p><strong>Need Help?</strong></p>
+                <p>📧 Email: support@ecommerce.com</p>
+                <p>📞 Phone: 1-800-ECOMMERCE</p>
+                <p>🌐 Website: {{websiteUrl}}</p>
+            </div>
+            
+            <p style="margin-top: 20px; font-size: 12px; color: #9CA3AF;">
+                This email was sent to {{customerEmail}}. If you have any questions about this order, please contact our support team.
+            </p>
+        </div>
+    </div>
+</body>
+</html>
