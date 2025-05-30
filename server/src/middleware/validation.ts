@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { body, param, validationResult } from 'express-validator';
 import mongoose from 'mongoose';
-import { createError } from './errorHandler';
 
 // Helper function to check validation results
 export const checkValidationResult = (req: Request, res: Response, next: NextFunction) => {
@@ -26,48 +25,55 @@ export const validateObjectId = (field: string) => {
   });
 };
 
-// Product validations
-export const validateProduct = [
-  validateObjectId('id'),
-  checkValidationResult
-];
+// Custom validation for credit card number (Luhn algorithm)
+const validateCreditCard = (value: string) => {
+  const cleanValue = value.replace(/\s/g, '');
+  
+  if (!/^\d{13,19}$/.test(cleanValue)) {
+    throw new Error('Card number must be 13-19 digits');
+  }
+  
+  // Luhn algorithm validation
+  let sum = 0;
+  let shouldDouble = false;
+  
+  for (let i = cleanValue.length - 1; i >= 0; i--) {
+    let digit = parseInt(cleanValue.charAt(i));
+    
+    if (shouldDouble) {
+      digit *= 2;
+      if (digit > 9) {
+        digit -= 9;
+      }
+    }
+    
+    sum += digit;
+    shouldDouble = !shouldDouble;
+  }
+  
+  if (sum % 10 !== 0) {
+    throw new Error('Invalid card number');
+  }
+  
+  return true;
+};
 
-export const validateAvailability = [
-  body('quantity')
-    .isInt({ min: 1 })
-    .withMessage('Quantity must be a positive integer'),
-  body('variants')
-    .optional()
-    .isArray()
-    .withMessage('Variants must be an array'),
-  body('variants.*.type')
-    .optional()
-    .isString()
-    .trim()
-    .isLength({ min: 1 })
-    .withMessage('Variant type is required'),
-  body('variants.*.value')
-    .optional()
-    .isString()
-    .trim()
-    .isLength({ min: 1 })
-    .withMessage('Variant value is required'),
-  checkValidationResult
-];
-
-export const validateInventoryUpdate = [
-  body('quantity')
-    .isInt({ min: 1 })
-    .withMessage('Quantity must be a positive integer'),
-  body('operation')
-    .isIn(['increase', 'decrease'])
-    .withMessage('Operation must be either increase or decrease'),
-  body('variants')
-    .optional()
-    .isArray()
-    .withMessage('Variants must be an array'),
-  checkValidationResult
-];
+// Custom validation for credit card expiry date
+const validateExpiryDate = (value: string) => {
+  if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(value)) {
+    throw new Error('Expiry date must be in MM/YY format');
+  }
+  
+  const [month, year] = value.split('/');
+  const expiryDate = new Date(2000 + parseInt(year), parseInt(month) - 1);
+  const now = new Date();
+  
+  if (expiryDate < now) {
+    throw new Error('Card has expired');
+  }
+  
+  return true;
+};
 
 // Order validations
 export const validateCreateOrder = [
@@ -125,22 +131,11 @@ export const validateCreateOrder = [
     .isArray()
     .withMessage('Selected variants must be an array'),
 
-  // Payment validation
+  // Payment validation - Using enhanced validation
   body('paymentInfo.cardNumber')
-    .matches(/^\d{13,19}$/)
-    .withMessage('Card number must be 13-19 digits'),
+    .custom(validateCreditCard),
   body('paymentInfo.expiryDate')
-    .matches(/^(0[1-9]|1[0-2])\/\d{2}$/)
-    .withMessage('Expiry date must be in MM/YY format')
-    .custom((value) => {
-      const [month, year] = value.split('/');
-      const expiryDate = new Date(2000 + parseInt(year), parseInt(month) - 1);
-      const now = new Date();
-      if (expiryDate < now) {
-        throw new Error('Card has expired');
-      }
-      return true;
-    }),
+    .custom(validateExpiryDate),
   body('paymentInfo.cvv')
     .matches(/^\d{3,4}$/)
     .withMessage('CVV must be 3 or 4 digits'),
@@ -158,6 +153,38 @@ export const validateCreateOrder = [
   checkValidationResult
 ];
 
+// Payment validations
+export const validatePaymentProcess = [
+  body('amount')
+    .isFloat({ min: 0.01 })
+    .withMessage('Amount must be greater than 0'),
+  body('cardNumber')
+    .custom(validateCreditCard),
+  body('expiryDate')
+    .custom(validateExpiryDate),
+  body('cvv')
+    .matches(/^\d{3,4}$/)
+    .withMessage('CVV must be 3 or 4 digits'),
+  body('cardholderName')
+    .isString()
+    .trim()
+    .isLength({ min: 2, max: 100 })
+    .withMessage('Cardholder name must be between 2 and 100 characters'),
+  checkValidationResult
+];
+
+export const validatePaymentDetails = [
+  body('cardNumber')
+    .custom(validateCreditCard),
+  body('expiryDate')
+    .custom(validateExpiryDate),
+  body('cvv')
+    .matches(/^\d{3,4}$/)
+    .withMessage('CVV must be 3 or 4 digits'),
+  checkValidationResult
+];
+
+// Other validations from GPT version
 export const validateOrderNumber = [
   param('orderNumber')
     .isString()
@@ -179,46 +206,44 @@ export const validateOrderStatus = [
   checkValidationResult
 ];
 
-// Payment validations
-export const validatePaymentProcess = [
-  body('amount')
-    .isFloat({ min: 0.01 })
-    .withMessage('Amount must be greater than 0'),
-  body('cardNumber')
-    .matches(/^\d{13,19}$/)
-    .withMessage('Card number must be 13-19 digits'),
-  body('expiryDate')
-    .matches(/^(0[1-9]|1[0-2])\/\d{2}$/)
-    .withMessage('Expiry date must be in MM/YY format')
-    .custom((value) => {
-      const [month, year] = value.split('/');
-      const expiryDate = new Date(2000 + parseInt(year), parseInt(month) - 1);
-      const now = new Date();
-      if (expiryDate < now) {
-        throw new Error('Card has expired');
-      }
-      return true;
-    }),
-  body('cvv')
-    .matches(/^\d{3,4}$/)
-    .withMessage('CVV must be 3 or 4 digits'),
-  body('cardholderName')
-    .isString()
-    .trim()
-    .isLength({ min: 2, max: 100 })
-    .withMessage('Cardholder name must be between 2 and 100 characters'),
+export const validateProduct = [
+  validateObjectId('id'),
   checkValidationResult
 ];
 
-export const validatePaymentDetails = [
-  body('cardNumber')
-    .matches(/^\d{13,19}$/)
-    .withMessage('Card number must be 13-19 digits'),
-  body('expiryDate')
-    .matches(/^(0[1-9]|1[0-2])\/\d{2}$/)
-    .withMessage('Expiry date must be in MM/YY format'),
-  body('cvv')
-    .matches(/^\d{3,4}$/)
-    .withMessage('CVV must be 3 or 4 digits'),
+export const validateAvailability = [
+  body('quantity')
+    .isInt({ min: 1 })
+    .withMessage('Quantity must be a positive integer'),
+  body('variants')
+    .optional()
+    .isArray()
+    .withMessage('Variants must be an array'),
+  body('variants.*.type')
+    .optional()
+    .isString()
+    .trim()
+    .isLength({ min: 1 })
+    .withMessage('Variant type is required'),
+  body('variants.*.value')
+    .optional()
+    .isString()
+    .trim()
+    .isLength({ min: 1 })
+    .withMessage('Variant value is required'),
+  checkValidationResult
+];
+
+export const validateInventoryUpdate = [
+  body('quantity')
+    .isInt({ min: 1 })
+    .withMessage('Quantity must be a positive integer'),
+  body('operation')
+    .isIn(['increase', 'decrease'])
+    .withMessage('Operation must be either increase or decrease'),
+  body('variants')
+    .optional()
+    .isArray()
+    .withMessage('Variants must be an array'),
   checkValidationResult
 ];
