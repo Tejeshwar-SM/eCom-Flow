@@ -54,7 +54,7 @@
     "typescript",
     "mongodb"
   ],
-  "author": "Your Name",
+  "author": "Tejeshwar Singh",
   "license": "MIT",
   "engines": {
     "node": ">=16.0.0",
