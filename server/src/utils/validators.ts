@@ -1,3 +1,4 @@
+import { parsePhoneNumberFromString, isValidPhoneNumber } from 'libphonenumber-js';
 import { ICustomer, IPaymentInfo } from '../types';
 
 export class Validators {
@@ -6,14 +7,49 @@ export class Validators {
     return emailRegex.test(email);
   }
 
+  // ✅ Updated for international phone support
   static isValidPhone(phone: string): boolean {
-    const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
-    return phoneRegex.test(phone);
+    if (!phone || phone.trim() === '') return false;
+    
+    try {
+      // Use libphonenumber-js for proper international validation
+      return isValidPhoneNumber(phone);
+    } catch (error) {
+      // Fallback to regex for basic validation
+      const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
+      return phoneRegex.test(phone);
+    }
   }
 
+  // ✅ Updated for international postal codes
+  static isValidPostalCode(postalCode: string, countryCode?: string): boolean {
+    if (!postalCode || postalCode.trim() === '') return false;
+    
+    const cleanCode = postalCode.trim().toUpperCase();
+    
+    // Country-specific postal code patterns
+    const patterns: { [key: string]: RegExp } = {
+      'IN': /^\d{6}$/, // India PIN codes
+      'US': /^\d{5}(-\d{4})?$/, // US ZIP codes
+      'CA': /^[A-Z]\d[A-Z]\s?\d[A-Z]\d$/, // Canada postal codes
+      'GB': /^[A-Z]{1,2}\d[A-Z\d]?\s?\d[A-Z]{2}$/, // UK postcodes
+      'AU': /^\d{4}$/, // Australia postcodes
+      'DE': /^\d{5}$/, // Germany postcodes
+      'FR': /^\d{5}$/, // France postal codes
+    };
+    
+    if (countryCode && patterns[countryCode]) {
+      return patterns[countryCode].test(cleanCode);
+    }
+    
+    // Generic validation for unknown countries
+    return /^[A-Z0-9\s-]{3,10}$/.test(cleanCode);
+  }
+
+  // ✅ Keep existing but use new postal code validation
   static isValidZipCode(zipCode: string): boolean {
-    const zipRegex = /^\d{5}(-\d{4})?$/;
-    return zipRegex.test(zipCode);
+    // This is for backward compatibility - now supports multiple formats
+    return this.isValidPostalCode(zipCode, 'US') || this.isValidPostalCode(zipCode, 'IN');
   }
 
   static isValidCardNumber(cardNumber: string): boolean {
@@ -46,6 +82,23 @@ export class Validators {
     return cvvRegex.test(cvv);
   }
 
+  // ✅ Get country code from country name
+  static getCountryCode(countryName: string): string | undefined {
+    const countryMapping: { [key: string]: string } = {
+      'India': 'IN',
+      'United States': 'US',
+      'Canada': 'CA',
+      'United Kingdom': 'GB',
+      'Australia': 'AU',
+      'Germany': 'DE',
+      'France': 'FR',
+      // Add more as needed
+    };
+    
+    return countryMapping[countryName];
+  }
+
+  // ✅ Updated customer validation with international support
   static validateCustomerData(customer: Partial<ICustomer>): string[] {
     const errors: string[] = [];
 
@@ -57,8 +110,9 @@ export class Validators {
       errors.push('Valid email address is required');
     }
 
+    // ✅ Updated phone validation
     if (!customer.phone || !this.isValidPhone(customer.phone)) {
-      errors.push('Valid phone number is required');
+      errors.push('Valid phone number with country code is required');
     }
 
     if (!customer.address) {
@@ -76,8 +130,20 @@ export class Validators {
         errors.push('State must be at least 2 characters');
       }
 
-      if (!customer.address.zipCode || !this.isValidZipCode(customer.address.zipCode)) {
-        errors.push('Valid zip code is required');
+      if (!customer.address.country) {
+        errors.push('Country is required');
+      }
+
+      // ✅ Updated postal code validation
+      if (!customer.address.zipCode) {
+        errors.push('Postal code is required');
+      } else {
+        const countryCode = this.getCountryCode(customer.address.country || '');
+        if (!this.isValidPostalCode(customer.address.zipCode, countryCode)) {
+          const label = countryCode === 'IN' ? 'PIN code' : 
+                       countryCode === 'US' ? 'ZIP code' : 'postal code';
+          errors.push(`Valid ${label} is required`);
+        }
       }
     }
 

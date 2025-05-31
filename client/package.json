@@ -17,10 +17,13 @@
   "dependencies": {
     "@hookform/resolvers": "^3.3.2",
     "axios": "^1.6.2",
+    "country-state-city": "^3.2.1",
+    "libphonenumber-js": "^1.12.8",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.48.2",
     "react-hot-toast": "^2.4.1",
+    "react-phone-number-input": "^3.4.12",
     "react-router-dom": "^6.20.1",
     "yup": "^1.4.0"
   },

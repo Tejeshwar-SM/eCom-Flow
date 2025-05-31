@@ -27,7 +27,7 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
       city: '',
       state: '',
       zipCode: '',
-      country: 'United States',
+      country: 'India', // ✅ FIXED: Changed from 'United States' to 'India'
     },
   });
 
@@ -88,14 +88,22 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
 
   // Validate customer step
   const validateCustomerStep = (): boolean => {
+    console.log('🔍 Validating customer data:', customerData);
+    
     const errors = ValidationUtils.validateCustomer(customerData);
+    console.log('❌ Validation errors found:', errors);
+    
     setCustomerErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
   // Validate payment step
   const validatePaymentStep = (): boolean => {
+    console.log('🔍 Validating payment data:', paymentData);
+    
     const errors = ValidationUtils.validatePaymentInfo(paymentData);
+    console.log('❌ Payment validation errors:', errors);
+    
     setPaymentErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -104,6 +112,8 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
   const handleNextStep = () => {
     if (validateCustomerStep()) {
       setCurrentStep(2);
+    } else {
+      console.log('❌ Customer validation failed, staying on step 1');
     }
   };
 
@@ -115,16 +125,32 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    console.log('🚀 Form submission started');
+    console.log('📋 Customer data:', customerData);
+    console.log('💳 Payment data:', paymentData);
+
     // Validate all data
     const customerValid = validateCustomerStep();
     const paymentValid = validatePaymentStep();
 
+    console.log('✅ Customer valid:', customerValid);
+    console.log('✅ Payment valid:', paymentValid);
+
     if (customerValid && paymentValid) {
+      console.log('🎯 All validation passed, submitting order');
       onSubmit(customerData as Customer, paymentData as PaymentInfo);
     } else {
-      // If payment step is invalid, go back to it
-      if (!paymentValid) {
+      console.log('❌ Validation failed');
+      
+      // If customer step is invalid, go back to it
+      if (!customerValid) {
+        setCurrentStep(1);
+        console.log('📍 Moved back to customer step due to validation errors');
+      }
+      // If payment step is invalid, go to it
+      else if (!paymentValid) {
         setCurrentStep(2);
+        console.log('📍 Moved to payment step due to validation errors');
       }
     }
   };
@@ -225,6 +251,33 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({
           </div>
         </div>
       </form>
+
+      {/* Debug Info (Remove in Production) */}
+      {import.meta.env.DEV && (
+        <div className="px-6 py-4 border-t border-gray-100 bg-gray-50">
+          <details className="text-xs">
+            <summary className="cursor-pointer text-gray-600">Debug Info</summary>
+            <div className="mt-2 space-y-2">
+              <div>
+                <strong>Customer Errors:</strong>
+                <pre className="text-xs bg-gray-100 p-2 rounded">
+                  {JSON.stringify(customerErrors, null, 2)}
+                </pre>
+              </div>
+              <div>
+                <strong>Payment Errors:</strong>
+                <pre className="text-xs bg-gray-100 p-2 rounded">
+                  {JSON.stringify(paymentErrors, null, 2)}
+                </pre>
+              </div>
+              <div>
+                <strong>Phone Value:</strong>
+                <span className="ml-2">{customerData.phone}</span>
+              </div>
+            </div>
+          </details>
+        </div>
+      )}
     </Card>
   );
 };

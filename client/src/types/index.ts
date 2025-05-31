@@ -29,16 +29,36 @@ export interface SelectedVariant {
 export interface Customer {
   fullName: string;
   email: string;
-  phone: string;
+  phone: string; // Now supports international format with country code
   address: Address;
 }
 
 export interface Address {
   street: string;
   city: string;
-  state: string;
-  zipCode: string;
-  country: string;
+  state: string; // Can be state/province/region depending on country
+  zipCode: string; // Can be ZIP/PIN/postal code depending on country
+  country: string; // Full country name
+}
+
+// International Support Types
+export interface CountryInfo {
+  name: string;
+  isoCode: string;
+  flag: string;
+  phonecode: string;
+}
+
+export interface StateInfo {
+  name: string;
+  isoCode: string;
+  countryCode: string;
+}
+
+export interface PostalCodeFormat {
+  pattern: RegExp;
+  example: string;
+  label: string;
 }
 
 // Order Types
@@ -229,4 +249,17 @@ export interface SelectOption {
   value: string;
   label: string;
   disabled?: boolean;
+}
+
+// Phone Input Types (for react-phone-number-input)
+export type PhoneNumber = string | undefined;
+
+export interface PhoneInputProps {
+  value?: PhoneNumber;
+  onChange?: (value: PhoneNumber) => void;
+  defaultCountry?: string;
+  international?: boolean;
+  disabled?: boolean;
+  placeholder?: string;
+  error?: string;
 }

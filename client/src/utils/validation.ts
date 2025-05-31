@@ -1,3 +1,5 @@
+import { parsePhoneNumberFromString, isValidPhoneNumber } from 'libphonenumber-js';
+import { Country } from 'country-state-city';
 import { Customer, PaymentInfo, FormErrors } from '../types/index';
 
 export class ValidationUtils {
@@ -7,16 +9,134 @@ export class ValidationUtils {
     return emailRegex.test(email);
   }
 
-  // Phone validation (US format)
+  // International phone validation
   static isValidPhone(phone: string): boolean {
-    const phoneRegex = /^\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$/;
-    return phoneRegex.test(phone.replace(/\s/g, ''));
+    if (!phone || phone.trim() === '') return false;
+    
+    try {
+      return isValidPhoneNumber(phone);
+    } catch (error) {
+      return false;
+    }
   }
 
-  // ZIP code validation
-  static isValidZipCode(zipCode: string): boolean {
-    const zipRegex = /^\d{5}(-\d{4})?$/;
-    return zipRegex.test(zipCode);
+  // Get phone country code
+  static getPhoneCountryCode(phone: string): string | undefined {
+    try {
+      const phoneNumber = parsePhoneNumberFromString(phone);
+      return phoneNumber?.country;
+    } catch (error) {
+      return undefined;
+    }
+  }
+
+  // Format phone number
+  static formatPhoneNumber(phone: string): string {
+    try {
+      const phoneNumber = parsePhoneNumberFromString(phone);
+      return phoneNumber?.formatInternational() || phone;
+    } catch (error) {
+      return phone;
+    }
+  }
+
+  // International postal code validation
+  static isValidPostalCode(postalCode: string, countryCode?: string): boolean {
+    if (!postalCode || postalCode.trim() === '') return false;
+    
+    const cleanCode = postalCode.trim().toUpperCase();
+    
+    // Country-specific postal code patterns
+    const patterns: { [key: string]: RegExp } = {
+      // India - PIN codes
+      'IN': /^\d{6}$/,
+      
+      // United States - ZIP codes
+      'US': /^\d{5}(-\d{4})?$/,
+      
+      // Canada - Postal codes
+      'CA': /^[A-Z]\d[A-Z]\s?\d[A-Z]\d$/,
+      
+      // United Kingdom - Postcodes
+      'GB': /^[A-Z]{1,2}\d[A-Z\d]?\s?\d[A-Z]{2}$/,
+      
+      // Australia - Postcodes
+      'AU': /^\d{4}$/,
+      
+      // Germany - Postleitzahl
+      'DE': /^\d{5}$/,
+      
+      // France - Code postal
+      'FR': /^\d{5}$/,
+      
+      // Japan - Postal codes
+      'JP': /^\d{3}-\d{4}$/,
+      
+      // Brazil - CEP
+      'BR': /^\d{5}-?\d{3}$/,
+      
+      // Netherlands - Postcodes
+      'NL': /^\d{4}\s?[A-Z]{2}$/,
+      
+      // Spain - Postal codes
+      'ES': /^\d{5}$/,
+      
+      // Italy - CAP
+      'IT': /^\d{5}$/,
+      
+      // China - Postal codes
+      'CN': /^\d{6}$/,
+      
+      // South Korea - Postal codes
+      'KR': /^\d{5}$/,
+      
+      // Russia - Postal codes
+      'RU': /^\d{6}$/,
+      
+      // Mexico - Postal codes
+      'MX': /^\d{5}$/,
+      
+      // Argentina - Postal codes
+      'AR': /^[A-Z]?\d{4}[A-Z]{3}$/,
+      
+      // South Africa - Postal codes
+      'ZA': /^\d{4}$/,
+      
+      // Switzerland - Postal codes
+      'CH': /^\d{4}$/,
+      
+      // Sweden - Postal codes
+      'SE': /^\d{3}\s?\d{2}$/,
+      
+      // Norway - Postal codes
+      'NO': /^\d{4}$/,
+      
+      // Denmark - Postal codes
+      'DK': /^\d{4}$/,
+      
+      // Finland - Postal codes
+      'FI': /^\d{5}$/,
+      
+      // Belgium - Postal codes
+      'BE': /^\d{4}$/,
+      
+      // Austria - Postal codes
+      'AT': /^\d{4}$/,
+    };
+    
+    if (countryCode && patterns[countryCode]) {
+      return patterns[countryCode].test(cleanCode);
+    }
+    
+    // Generic validation for unknown countries (alphanumeric, 3-10 chars)
+    return /^[A-Z0-9\s-]{3,10}$/.test(cleanCode);
+  }
+
+  // Get country code from country name
+  static getCountryCode(countryName: string): string | undefined {
+    const countries = Country.getAllCountries();
+    const country = countries.find(c => c.name === countryName);
+    return country?.isoCode;
   }
 
   // Credit card number validation (Luhn algorithm)
@@ -72,7 +192,7 @@ export class ValidationUtils {
     return cvvRegex.test(cvv);
   }
 
-  // Customer data validation
+  // Customer data validation with international support
   static validateCustomer(customer: Partial<Customer>): FormErrors {
     const errors: FormErrors = {};
 
@@ -92,43 +212,83 @@ export class ValidationUtils {
       errors.email = 'Please enter a valid email address';
     }
 
-    // Phone validation
+    // International phone validation
     if (!customer.phone?.trim()) {
       errors.phone = 'Phone number is required';
     } else if (!this.isValidPhone(customer.phone)) {
-      errors.phone = 'Please enter a valid phone number';
+      errors.phone = 'Please enter a valid phone number with country code';
     }
 
     // Address validation
     if (!customer.address) {
       errors.address = 'Address is required';
     } else {
+      // Country validation
+      if (!customer.address.country?.trim()) {
+        errors['address.country'] = 'Country is required';
+      }
+
+      // Street address validation
       if (!customer.address.street?.trim()) {
         errors['address.street'] = 'Street address is required';
       } else if (customer.address.street.trim().length < 5) {
         errors['address.street'] = 'Street address must be at least 5 characters';
       }
 
+      // City validation
       if (!customer.address.city?.trim()) {
         errors['address.city'] = 'City is required';
       } else if (customer.address.city.trim().length < 2) {
         errors['address.city'] = 'City must be at least 2 characters';
       }
 
+      // State validation
       if (!customer.address.state?.trim()) {
-        errors['address.state'] = 'State is required';
+        errors['address.state'] = 'State/Province is required';
       } else if (customer.address.state.trim().length < 2) {
-        errors['address.state'] = 'State must be at least 2 characters';
+        errors['address.state'] = 'State/Province must be at least 2 characters';
       }
 
+      // Postal code validation with country-specific rules
       if (!customer.address.zipCode?.trim()) {
-        errors['address.zipCode'] = 'ZIP code is required';
-      } else if (!this.isValidZipCode(customer.address.zipCode)) {
-        errors['address.zipCode'] = 'Please enter a valid ZIP code';
+        errors['address.zipCode'] = 'Postal code is required';
+      } else {
+        const countryCode = this.getCountryCode(customer.address.country || '');
+        if (!this.isValidPostalCode(customer.address.zipCode, countryCode)) {
+          const postalLabel = this.getPostalCodeLabel(countryCode);
+          errors['address.zipCode'] = `Please enter a valid ${postalLabel.toLowerCase()}`;
+        }
       }
     }
 
     return errors;
+  }
+
+  // Get postal code label based on country
+  static getPostalCodeLabel(countryCode?: string): string {
+    const labels: { [key: string]: string } = {
+      'IN': 'PIN Code',
+      'US': 'ZIP Code',
+      'CA': 'Postal Code',
+      'GB': 'Postcode',
+      'AU': 'Postcode',
+      'DE': 'Postleitzahl',
+      'FR': 'Code Postal',
+      'JP': 'Postal Code',
+      'BR': 'CEP',
+      'NL': 'Postcode',
+      'ES': 'Código Postal',
+      'IT': 'CAP',
+      'CN': 'Postal Code',
+      'KR': 'Postal Code',
+      'RU': 'Postal Code',
+      'MX': 'Código Postal',
+      'AR': 'Código Postal',
+      'ZA': 'Postal Code',
+      'CH': 'Postal Code',
+    };
+
+    return labels[countryCode || ''] || 'Postal Code';
   }
 
   // Payment info validation
@@ -206,16 +366,5 @@ export class ValidationUtils {
     }
     
     return cleanInput;
-  }
-
-  // Format phone number
-  static formatPhoneNumber(phone: string): string {
-    const cleanPhone = phone.replace(/\D/g, '');
-    
-    if (cleanPhone.length === 10) {
-      return cleanPhone.replace(/(\d{3})(\d{3})(\d{4})/, '($1) $2-$3');
-    }
-    
-    return phone;
   }
 }

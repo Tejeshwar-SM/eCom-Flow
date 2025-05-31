@@ -1,3 +1,6 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import { connectDB } from '../config/database';
 import Product from '../models/Product';
 import { IProduct } from '../types';
@@ -87,35 +90,57 @@ const sampleProducts: Partial<IProduct>[] = [
 export class SeedData {
   static async seedDatabase(): Promise<void> {
     try {
+      console.log('🔗 Connecting to database...');
       await connectDB();
       
-      const existingProducts = await Product.countDocuments();
+      // Debug: Show connection info
+      const mongoose = require('mongoose');
+      console.log('📍 Database:', mongoose.connection.db.databaseName);
+      console.log('🌐 Host:', mongoose.connection.host);
       
-      if (existingProducts === 0) {
-        Helpers.logInfo('🌱 Seeding database with sample products...');
-        
-        await Product.insertMany(sampleProducts);
-        
-        const productCount = await Product.countDocuments();
-        Helpers.logSuccess(`✅ Successfully seeded ${productCount} products`);
-      } else {
-        Helpers.logInfo(`ℹ️  Database already contains ${existingProducts} products. Skipping seed.`);
-      }
+      // FORCE CLEAR AND RESEED - This fixes the isActive field issue
+      console.log('🗑️ Clearing existing products...');
+      const deleteResult = await Product.deleteMany({});
+      console.log(`🗑️ Deleted ${deleteResult.deletedCount} existing products`);
+      
+      console.log('🌱 Seeding database with fresh products...');
+      const result = await Product.insertMany(sampleProducts);
+      console.log(`✅ Successfully seeded ${result.length} products`);
+      
+      // Verify with different queries
+      const totalCount = await Product.countDocuments();
+      const activeCount = await Product.countDocuments({ isActive: true });
+      const inactiveCount = await Product.countDocuments({ isActive: false });
+      const noIsActiveField = await Product.countDocuments({ isActive: { $exists: false } });
+      
+      console.log(`📊 Database Summary:`);
+      console.log(`   Total products: ${totalCount}`);
+      console.log(`   Active products: ${activeCount}`);
+      console.log(`   Inactive products: ${inactiveCount}`);
+      console.log(`   Products without isActive field: ${noIsActiveField}`);
+      
+      // Show sample product
+      const sampleProduct = await Product.findOne({});
+      console.log(`📝 Sample product: ${sampleProduct?.name} (isActive: ${sampleProduct?.isActive})`);
+      
     } catch (error) {
-      Helpers.logError('❌ Error seeding database:', error);
+      console.error('❌ Error seeding database:', error);
       throw error;
+    } finally {
+      process.exit(0);
     }
   }
 
   static async clearDatabase(): Promise<void> {
     try {
       await connectDB();
-      
-      await Product.deleteMany({});
-      Helpers.logSuccess('🗑️  Database cleared successfully');
+      const result = await Product.deleteMany({});
+      console.log(`🗑️ Database cleared successfully. Deleted ${result.deletedCount} products.`);
     } catch (error) {
-      Helpers.logError('❌ Error clearing database:', error);
+      console.error('❌ Error clearing database:', error);
       throw error;
+    } finally {
+      process.exit(0);
     }
   }
 
@@ -123,10 +148,32 @@ export class SeedData {
     try {
       await this.clearDatabase();
       await this.seedDatabase();
-      Helpers.logSuccess('🔄 Database reset completed');
     } catch (error) {
-      Helpers.logError('❌ Error resetting database:', error);
+      console.error('❌ Error resetting database:', error);
       throw error;
+    }
+  }
+
+  static async fixIsActiveField(): Promise<void> {
+    try {
+      await connectDB();
+      
+      // Add isActive: true to products that don't have this field
+      const result = await Product.updateMany(
+        { isActive: { $exists: false } },
+        { $set: { isActive: true } }
+      );
+      
+      console.log(`✅ Fixed ${result.modifiedCount} products with missing isActive field`);
+      
+      const activeCount = await Product.countDocuments({ isActive: true });
+      console.log(`📊 Total active products: ${activeCount}`);
+      
+    } catch (error) {
+      console.error('❌ Error fixing isActive field:', error);
+      throw error;
+    } finally {
+      process.exit(0);
     }
   }
 }
@@ -137,22 +184,23 @@ if (require.main === module) {
   
   switch (command) {
     case 'seed':
-      SeedData.seedDatabase()
-        .then(() => process.exit(0))
-        .catch(() => process.exit(1));
+      SeedData.seedDatabase();
       break;
     case 'clear':
-      SeedData.clearDatabase()
-        .then(() => process.exit(0))
-        .catch(() => process.exit(1));
+      SeedData.clearDatabase();
       break;
     case 'reset':
-      SeedData.resetDatabase()
-        .then(() => process.exit(0))
-        .catch(() => process.exit(1));
+      SeedData.resetDatabase();
+      break;
+    case 'fix':
+      SeedData.fixIsActiveField();
       break;
     default:
-      console.log('Usage: npm run seed [seed|clear|reset]');
+      console.log('Usage: npm run seed [seed|clear|reset|fix]');
+      console.log('  seed  - Force clear and reseed all products');
+      console.log('  clear - Clear all products');
+      console.log('  reset - Clear and reseed');
+      console.log('  fix   - Add isActive field to existing products');
       process.exit(1);
   }
 }

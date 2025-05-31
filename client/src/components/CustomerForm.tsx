@@ -1,7 +1,10 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import PhoneInput from 'react-phone-number-input';
+import { Country, State } from 'country-state-city';
 import { Customer, FormErrors } from '../types/index';
 import { ValidationUtils } from '../utils/validation';
 import Input from './ui/Input';
+import 'react-phone-number-input/style.css';
 
 interface CustomerFormProps {
   data: Partial<Customer>;
@@ -16,21 +19,107 @@ const CustomerForm: React.FC<CustomerFormProps> = ({
   onChange,
   disabled = false,
 }) => {
-  // US States for dropdown
-  const usStates = [
-    'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut',
-    'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa',
-    'Kansas', 'Kentucky', 'Louisiana', 'Maine', 'Maryland', 'Massachusetts', 'Michigan',
-    'Minnesota', 'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire',
-    'New Jersey', 'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio',
-    'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota',
-    'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington', 'West Virginia',
-    'Wisconsin', 'Wyoming'
-  ];
+  // Get all countries and states
+  const countries = Country.getAllCountries();
+  const [states, setStates] = useState<any[]>([]);
+  const [selectedCountry, setSelectedCountry] = useState<any>(null);
 
-  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = ValidationUtils.formatPhoneNumber(e.target.value);
-    onChange('phone', formatted);
+  // Initialize with current country or default to India
+  useEffect(() => {
+    const currentCountryCode = data.address?.country;
+    let country;
+    
+    if (currentCountryCode) {
+      country = countries.find(c => c.name === currentCountryCode || c.isoCode === currentCountryCode);
+    } else {
+      // Default to India
+      country = countries.find(c => c.isoCode === 'IN');
+    }
+    
+    if (country) {
+      setSelectedCountry(country);
+      updateStatesForCountry(country.isoCode);
+      if (!currentCountryCode) {
+        onChange('address.country', country.name);
+      }
+    }
+  }, [data.address?.country, countries]);
+
+  const updateStatesForCountry = (countryCode: string) => {
+    const countryStates = State.getStatesOfCountry(countryCode);
+    setStates(countryStates || []);
+    
+    // Clear state if it doesn't exist in new country
+    if (data.address?.state && countryStates) {
+      const stateExists = countryStates.some(s => s.name === data.address?.state);
+      if (!stateExists) {
+        onChange('address.state', '');
+      }
+    }
+  };
+
+  const handleCountryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const countryName = e.target.value;
+    const country = countries.find(c => c.name === countryName);
+    
+    if (country) {
+      setSelectedCountry(country);
+      updateStatesForCountry(country.isoCode);
+      onChange('address.country', countryName);
+      onChange('address.state', ''); // Reset state when country changes
+    }
+  };
+
+  const handlePhoneChange = (value: string | undefined) => {
+    onChange('phone', value || '');
+  };
+
+  // Get postal code label based on country
+  const getPostalCodeLabel = () => {
+    if (!selectedCountry) return 'Postal Code';
+    
+    switch (selectedCountry.isoCode) {
+      case 'IN': return 'PIN Code';
+      case 'US': return 'ZIP Code';
+      case 'CA': return 'Postal Code';
+      case 'GB': return 'Postcode';
+      case 'AU': return 'Postcode';
+      case 'DE': return 'Postleitzahl';
+      case 'FR': return 'Code Postal';
+      default: return 'Postal Code';
+    }
+  };
+
+  // Get postal code placeholder based on country
+  const getPostalCodePlaceholder = () => {
+    if (!selectedCountry) return 'Enter postal code';
+    
+    switch (selectedCountry.isoCode) {
+      case 'IN': return '110001';
+      case 'US': return '12345';
+      case 'CA': return 'K1A 0A6';
+      case 'GB': return 'SW1A 1AA';
+      case 'AU': return '2000';
+      case 'DE': return '10115';
+      case 'FR': return '75001';
+      default: return 'Enter postal code';
+    }
+  };
+
+  // Get state/province label based on country
+  const getStateLabel = () => {
+    if (!selectedCountry) return 'State';
+    
+    switch (selectedCountry.isoCode) {
+      case 'IN': return 'State';
+      case 'US': return 'State';
+      case 'CA': return 'Province';
+      case 'GB': return 'County';
+      case 'AU': return 'State';
+      case 'DE': return 'State';
+      case 'FR': return 'Region';
+      default: return 'State/Province';
+    }
   };
 
   return (
@@ -74,15 +163,33 @@ const CustomerForm: React.FC<CustomerFormProps> = ({
           <label className="form-label">
             Phone Number <span className="text-red-500">*</span>
           </label>
-          <Input
-            type="tel"
-            value={data.phone || ''}
-            onChange={handlePhoneChange}
-            placeholder="(555) 123-4567"
-            error={errors.phone}
-            disabled={disabled}
-            required
-          />
+          <div className="relative">
+            <PhoneInput
+              international
+              countryCallingCodeEditable={false}
+              defaultCountry="IN"
+              value={data.phone || ''}
+              onChange={handlePhoneChange}
+              disabled={disabled}
+              placeholder="Enter phone number"
+              className={`block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm ${
+                errors.phone ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''
+              }`}
+              style={{
+                '--PhoneInputCountryFlag-height': '1em',
+                '--PhoneInputCountrySelectArrow-color': '#6b7280',
+                '--PhoneInput-color--focus': '#3b82f6',
+              } as any}
+            />
+            {errors.phone && (
+              <p className="mt-1 text-sm text-red-600 flex items-center">
+                <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                {errors.phone}
+              </p>
+            )}
+          </div>
         </div>
       </div>
 
@@ -90,6 +197,36 @@ const CustomerForm: React.FC<CustomerFormProps> = ({
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Billing Address</h3>
         
         <div className="space-y-4">
+          {/* Country Selection */}
+          <div>
+            <label className="form-label">
+              Country <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={data.address?.country || ''}
+              onChange={handleCountryChange}
+              className={`form-select ${errors['address.country'] ? 'form-input-error' : ''}`}
+              disabled={disabled}
+              required
+            >
+              <option value="">Select Country</option>
+              {countries.map(country => (
+                <option key={country.isoCode} value={country.name}>
+                  {country.flag} {country.name}
+                </option>
+              ))}
+            </select>
+            {errors['address.country'] && (
+              <p className="form-error">
+                <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                {errors['address.country']}
+              </p>
+            )}
+          </div>
+
+          {/* Street Address */}
           <div>
             <label className="form-label">
               Street Address <span className="text-red-500">*</span>
@@ -106,6 +243,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* City */}
             <div>
               <label className="form-label">
                 City <span className="text-red-500">*</span>
@@ -114,29 +252,44 @@ const CustomerForm: React.FC<CustomerFormProps> = ({
                 type="text"
                 value={data.address?.city || ''}
                 onChange={(e) => onChange('address.city', e.target.value)}
-                placeholder="City"
+                placeholder="Enter city"
                 error={errors['address.city']}
                 disabled={disabled}
                 required
               />
             </div>
 
+            {/* State/Province */}
             <div>
               <label className="form-label">
-                State <span className="text-red-500">*</span>
+                {getStateLabel()} <span className="text-red-500">*</span>
               </label>
-              <select
-                value={data.address?.state || ''}
-                onChange={(e) => onChange('address.state', e.target.value)}
-                className={`form-select ${errors['address.state'] ? 'form-input-error' : ''}`}
-                disabled={disabled}
-                required
-              >
-                <option value="">Select State</option>
-                {usStates.map(state => (
-                  <option key={state} value={state}>{state}</option>
-                ))}
-              </select>
+              {states.length > 0 ? (
+                <select
+                  value={data.address?.state || ''}
+                  onChange={(e) => onChange('address.state', e.target.value)}
+                  className={`form-select ${errors['address.state'] ? 'form-input-error' : ''}`}
+                  disabled={disabled}
+                  required
+                >
+                  <option value="">Select {getStateLabel()}</option>
+                  {states.map(state => (
+                    <option key={state.isoCode} value={state.name}>
+                      {state.name}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <Input
+                  type="text"
+                  value={data.address?.state || ''}
+                  onChange={(e) => onChange('address.state', e.target.value)}
+                  placeholder={`Enter ${getStateLabel().toLowerCase()}`}
+                  error={errors['address.state']}
+                  disabled={disabled}
+                  required
+                />
+              )}
               {errors['address.state'] && (
                 <p className="form-error">
                   <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
@@ -147,33 +300,21 @@ const CustomerForm: React.FC<CustomerFormProps> = ({
               )}
             </div>
 
+            {/* Postal Code */}
             <div>
               <label className="form-label">
-                ZIP Code <span className="text-red-500">*</span>
+                {getPostalCodeLabel()} <span className="text-red-500">*</span>
               </label>
               <Input
                 type="text"
                 value={data.address?.zipCode || ''}
                 onChange={(e) => onChange('address.zipCode', e.target.value)}
-                placeholder="12345"
+                placeholder={getPostalCodePlaceholder()}
                 error={errors['address.zipCode']}
                 disabled={disabled}
                 required
               />
             </div>
-          </div>
-
-          <div>
-            <label className="form-label">Country</label>
-            <select
-              value={data.address?.country || 'United States'}
-              onChange={(e) => onChange('address.country', e.target.value)}
-              className="form-select"
-              disabled={disabled}
-            >
-              <option value="United States">United States</option>
-              <option value="Canada">Canada</option>
-            </select>
           </div>
         </div>
       </div>
@@ -186,7 +327,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({
           </svg>
           <div className="text-sm text-blue-700">
             <p className="font-medium">Secure Information</p>
-            <p>Your personal information is encrypted and will only be used to process your order.</p>
+            <p>Your personal information is encrypted and will only be used to process your order. We support customers worldwide.</p>
           </div>
         </div>
       </div>

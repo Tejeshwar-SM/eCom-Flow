@@ -25,6 +25,80 @@ export const validateObjectId = (field: string) => {
   });
 };
 
+// ✅ Enhanced postal code validation for multiple countries
+const validatePostalCode = (value: string, { req }: any) => {
+  if (!value || value.trim() === '') {
+    throw new Error('Postal code is required');
+  }
+
+  const cleanValue = value.trim();
+  const country = req.body?.customer?.address?.country || '';
+
+  // Country-specific postal code patterns
+  const patterns: { [key: string]: { regex: RegExp; name: string } } = {
+    'India': { 
+      regex: /^[1-9]\d{5}$/, 
+      name: 'PIN code (6 digits, cannot start with 0)' 
+    },
+    'United States': { 
+      regex: /^\d{5}(-\d{4})?$/, 
+      name: 'ZIP code (5 digits or 5+4 format)' 
+    },
+    'Canada': { 
+      regex: /^[A-Z]\d[A-Z]\s?\d[A-Z]\d$/i, 
+      name: 'postal code (A1A 1A1 format)' 
+    },
+    'United Kingdom': { 
+      regex: /^[A-Z]{1,2}\d[A-Z\d]?\s?\d[A-Z]{2}$/i, 
+      name: 'postcode (UK format)' 
+    },
+    'Australia': { 
+      regex: /^\d{4}$/, 
+      name: 'postcode (4 digits)' 
+    },
+    'Germany': { 
+      regex: /^\d{5}$/, 
+      name: 'postcode (5 digits)' 
+    },
+    'France': { 
+      regex: /^\d{5}$/, 
+      name: 'postal code (5 digits)' 
+    }
+  };
+
+  // If we have a country-specific pattern, use it
+  if (country && patterns[country]) {
+    const pattern = patterns[country];
+    if (!pattern.regex.test(cleanValue)) {
+      throw new Error(`Invalid ${pattern.name} format`);
+    }
+  } else {
+    // Generic validation for unknown countries (alphanumeric, 3-10 chars)
+    if (!/^[A-Z0-9\s-]{3,10}$/i.test(cleanValue)) {
+      throw new Error('Invalid postal code format');
+    }
+  }
+
+  return true;
+};
+
+// ✅ Enhanced phone validation for international numbers
+const validateInternationalPhone = (value: string) => {
+  if (!value || value.trim() === '') {
+    throw new Error('Phone number is required');
+  }
+
+  // Basic international phone validation
+  // Accepts +country_code followed by digits, spaces, hyphens, parentheses
+  const phoneRegex = /^[\+]?[1-9][\d\s\-\(\)]{7,20}$/;
+  
+  if (!phoneRegex.test(value.trim())) {
+    throw new Error('Valid international phone number is required (include country code)');
+  }
+
+  return true;
+};
+
 // Custom validation for credit card number (Luhn algorithm)
 const validateCreditCard = (value: string) => {
   const cleanValue = value.replace(/\s/g, '');
@@ -75,7 +149,7 @@ const validateExpiryDate = (value: string) => {
   return true;
 };
 
-// Order validations
+// ✅ Updated order validation with international support
 export const validateCreateOrder = [
   // Customer validation
   body('customer.fullName')
@@ -83,37 +157,43 @@ export const validateCreateOrder = [
     .trim()
     .isLength({ min: 2, max: 100 })
     .withMessage('Full name must be between 2 and 100 characters'),
+  
   body('customer.email')
     .isEmail()
     .normalizeEmail()
     .withMessage('Valid email is required'),
+  
+  // ✅ Updated phone validation for international numbers
   body('customer.phone')
-    .matches(/^[\+]?[1-9][\d]{0,15}$/)
-    .withMessage('Valid phone number is required'),
+    .custom(validateInternationalPhone),
+  
   body('customer.address.street')
     .isString()
     .trim()
     .isLength({ min: 5, max: 200 })
     .withMessage('Street address must be between 5 and 200 characters'),
+  
   body('customer.address.city')
     .isString()
     .trim()
     .isLength({ min: 2, max: 100 })
     .withMessage('City must be between 2 and 100 characters'),
+  
   body('customer.address.state')
     .isString()
     .trim()
     .isLength({ min: 2, max: 100 })
-    .withMessage('State must be between 2 and 100 characters'),
+    .withMessage('State/Province must be between 2 and 100 characters'),
+  
+  // ✅ Updated postal code validation for multiple countries
   body('customer.address.zipCode')
-    .matches(/^\d{5}(-\d{4})?$/)
-    .withMessage('Valid zip code is required (e.g., 12345 or 12345-6789)'),
+    .custom(validatePostalCode),
+  
   body('customer.address.country')
-    .optional()
     .isString()
     .trim()
-    .isLength({ max: 100 })
-    .withMessage('Country name cannot exceed 100 characters'),
+    .isLength({ min: 2, max: 100 })
+    .withMessage('Country is required'),
 
   // Product validation
   body('product.productId')
@@ -123,22 +203,27 @@ export const validateCreateOrder = [
       }
       return true;
     }),
+  
   body('product.quantity')
     .isInt({ min: 1, max: 10 })
     .withMessage('Quantity must be between 1 and 10'),
+  
   body('product.selectedVariants')
     .optional()
     .isArray()
     .withMessage('Selected variants must be an array'),
 
-  // Payment validation - Using enhanced validation
+  // Payment validation
   body('paymentInfo.cardNumber')
     .custom(validateCreditCard),
+  
   body('paymentInfo.expiryDate')
     .custom(validateExpiryDate),
+  
   body('paymentInfo.cvv')
     .matches(/^\d{3,4}$/)
     .withMessage('CVV must be 3 or 4 digits'),
+  
   body('paymentInfo.cardholderName')
     .isString()
     .trim()
@@ -184,7 +269,7 @@ export const validatePaymentDetails = [
   checkValidationResult
 ];
 
-// Other validations from GPT version
+// Other validations
 export const validateOrderNumber = [
   param('orderNumber')
     .isString()

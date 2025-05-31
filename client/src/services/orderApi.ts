@@ -23,15 +23,15 @@ export const orderApi = {
     // Clean the data before sending to match server validation expectations
     const cleanedData = {
       customer: {
-        fullName: orderData.customer.fullName,
-        email: orderData.customer.email,
-        phone: orderData.customer.phone.replace(/\D/g, ''), // Remove all non-digits
+        fullName: orderData.customer.fullName.trim(),
+        email: orderData.customer.email.trim().toLowerCase(),
+        phone: orderData.customer.phone, // ✅ KEEP INTERNATIONAL FORMAT - DON'T STRIP!
         address: {
-          street: orderData.customer.address.street,
-          city: orderData.customer.address.city,
-          state: orderData.customer.address.state,
-          zipCode: orderData.customer.address.zipCode,
-          country: orderData.customer.address.country || 'United States'
+          street: orderData.customer.address.street.trim(),
+          city: orderData.customer.address.city.trim(),
+          state: orderData.customer.address.state.trim(),
+          zipCode: orderData.customer.address.zipCode.trim(),
+          country: orderData.customer.address.country.trim() || 'India' // ✅ Default to India
         }
       },
       product: {
@@ -40,15 +40,17 @@ export const orderApi = {
         selectedVariants: orderData.product.selectedVariants || []
       },
       paymentInfo: {
-        cardNumber: orderData.paymentInfo.cardNumber.replace(/\s/g, ''), // Remove spaces
-        expiryDate: orderData.paymentInfo.expiryDate,
-        cardholderName: orderData.paymentInfo.cardholderName,
-        cvv: orderData.paymentInfo.cvv
+        cardNumber: orderData.paymentInfo.cardNumber.replace(/\s/g, ''), // Only remove spaces from card
+        expiryDate: orderData.paymentInfo.expiryDate.trim(),
+        cardholderName: orderData.paymentInfo.cardholderName.trim(),
+        cvv: orderData.paymentInfo.cvv.trim()
       },
       transactionResult: orderData.transactionResult
     };
 
     console.log('🧹 Cleaned order data before sending:', cleanedData);
+    console.log('📱 Phone format being sent:', cleanedData.customer.phone);
+    
     return apiUtils.post('/orders', cleanedData);
   },
 

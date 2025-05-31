@@ -125,6 +125,48 @@ app.post("/api/test-email", async (req, res) => {
   }
 });
 
+// Add this debug endpoint to your server.ts (after your existing routes)
+app.get('/api/debug/products', async (req, res) => {
+  try {
+    const { default: Product } = await import('../src/models/Product');
+    
+    const totalProducts = await Product.countDocuments();
+    const activeProducts = await Product.countDocuments({ isActive: true });
+    const inactiveProducts = await Product.countDocuments({ isActive: false });
+    const noIsActiveField = await Product.countDocuments({ isActive: { $exists: false } });
+    
+    const sampleProducts = await Product.find({}).limit(3).lean();
+    const activeSampleProducts = await Product.find({ isActive: true }).limit(3).lean();
+    
+    res.json({
+      success: true,
+      summary: {
+        total: totalProducts,
+        active: activeProducts,
+        inactive: inactiveProducts,
+        missingIsActive: noIsActiveField
+      },
+      sampleProducts: sampleProducts.map(p => ({
+        _id: p._id,
+        name: p.name,
+        isActive: p.isActive,
+        hasIsActiveField: p.hasOwnProperty('isActive')
+      })),
+      activeSampleProducts: activeSampleProducts.map(p => ({
+        _id: p._id,
+        name: p.name,
+        isActive: p.isActive
+      }))
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
+
 // Error handling middleware (should be last)
 app.use(errorHandler);
 
