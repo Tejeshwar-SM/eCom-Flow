@@ -140,6 +140,38 @@ class PaymentService {
     retryAllowed?: boolean;
   } {
     const cleanCardNumber = cardNumber.replace(/\s/g, '');
+
+    // **SPECIFIC TEST CARD HANDLING - Check these first!**
+    
+    // Visa Approved: 4242424242424242
+    if (cleanCardNumber === '4242424242424242') {
+      return {
+        outcome: 'approved',
+        message: 'Transaction approved successfully'
+      };
+    }
+
+    // Visa Declined: 4000000000000002
+    if (cleanCardNumber === '4000000000000002') {
+      return {
+        outcome: 'declined',
+        message: 'Transaction declined by issuing bank',
+        errorCode: 'DECLINED_BY_BANK',
+        retryAllowed: false
+      };
+    }
+
+    // Visa Gateway Error: 4000000000000010
+    if (cleanCardNumber === '4000000000000010') {
+      return {
+        outcome: 'error',
+        message: 'Payment gateway error. Please try again.',
+        errorCode: 'GATEWAY_ERROR',
+        retryAllowed: true
+      };
+    }
+
+    // **FALLBACK LOGIC for other card numbers (your original logic)**
     const lastDigit = parseInt(cleanCardNumber.slice(-1), 10);
     const lastTwoDigits = parseInt(cleanCardNumber.slice(-2), 10);
 
@@ -150,8 +182,8 @@ class PaymentService {
         outcome: 'approved',
         message: 'Transaction approved successfully'
       };
-    } else if (lastTwoDigits === 10 || lastTwoDigits === 20 || lastTwoDigits === 30) {
-      // Simulate declined transactions
+    } else if (lastTwoDigits === 20 || lastTwoDigits === 30 || lastTwoDigits === 40) {
+      // Simulate declined transactions (changed from 10,20,30 to 20,30,40 to avoid conflict)
       return {
         outcome: 'declined',
         message: 'Transaction declined by issuing bank',
