@@ -51,7 +51,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
             
             {selectedVariants.length > 0 && (
               <div className="mt-1">
-                {selectedVariants.map((variant, index) => (
+                {selectedVariants.map((variant, _index) => (
                   <span
                     key={`${variant.type}-${variant.value}`}
                     className="inline-block text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded mr-1 capitalize"

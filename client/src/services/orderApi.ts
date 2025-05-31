@@ -1,5 +1,5 @@
 import { apiUtils } from '../utils/api';
-import { Order, Customer, PaymentInfo, SelectedVariant, ApiResponse } from '../types/index';
+import { Order, Customer, SelectedVariant, ApiResponse } from '../types/index';
 
 interface CreateOrderRequest {
   customer: Customer;

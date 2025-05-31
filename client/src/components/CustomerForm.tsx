@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import PhoneInput from 'react-phone-number-input';
 import { Country, State } from 'country-state-city';
 import { Customer, FormErrors } from '../types/index';
-import { ValidationUtils } from '../utils/validation';
+// import { ValidationUtils } from '../utils/validation';
 import Input from './ui/Input';
 import 'react-phone-number-input/style.css';
 
