@@ -206,7 +206,7 @@ const Landing: React.FC = () => {
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="container-custom py-4">
-          <h1 className="text-2xl font-bold text-gray-900">Premium Store</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Prime</h1>
           <p className="text-gray-600 mt-1">Discover amazing products at great prices</p>
         </div>
       </header>
