@@ -14,13 +14,13 @@ const api: AxiosInstance = axios.create({
 api.interceptors.request.use(
   (config) => {
     if (import.meta.env.DEV) {
-      console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.url}`);
-      console.log(`🎯 Base URL: ${config.baseURL}`); // Added for debugging
+      console.log(`API Request: ${config.method?.toUpperCase()} ${config.url}`);
+      console.log(`Base URL: ${config.baseURL}`); // Added for debugging
     }
     return config;
   },
   (error) => {
-    console.error('❌ Request Error:', error);
+    console.error('Request Error:', error);
     return Promise.reject(error);
   }
 );
@@ -30,7 +30,7 @@ api.interceptors.response.use(
   (response: AxiosResponse) => {
     // Log successful responses in development
     if (import.meta.env.DEV) {
-      console.log(`✅ API Response: ${response.config.method?.toUpperCase()} ${response.config.url}`, response.data);
+      console.log(`API Response: ${response.config.method?.toUpperCase()} ${response.config.url}`, response.data);
     }
     return response;
   },
@@ -39,7 +39,7 @@ api.interceptors.response.use(
     const errorMessage = getErrorMessage(error);
     
     // Log errors
-    console.error('❌ API Error:', {
+    console.error('API Error:', {
       url: error.config?.url,
       method: error.config?.method,
       status: error.response?.status,

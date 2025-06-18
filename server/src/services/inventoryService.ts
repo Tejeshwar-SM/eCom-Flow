@@ -39,11 +39,11 @@ class InventoryService {
       }
 
       await product.save();
-      console.log(`✅ Reduced inventory for product ${productId} by ${quantity}`);
+      console.log(`Reduced inventory for product ${productId} by ${quantity}`);
       return true;
 
     } catch (error) {
-      console.error('❌ Failed to reduce inventory:', error);
+      console.error('Failed to reduce inventory:', error);
       throw error;
     }
   }
@@ -77,11 +77,11 @@ class InventoryService {
       }
 
       await product.save();
-      console.log(`✅ Increased inventory for product ${productId} by ${quantity}`);
+      console.log(`Increased inventory for product ${productId} by ${quantity}`);
       return true;
 
     } catch (error) {
-      console.error('❌ Failed to increase inventory:', error);
+      console.error('Failed to increase inventory:', error);
       throw error;
     }
   }
@@ -132,7 +132,7 @@ class InventoryService {
       return { available: true };
 
     } catch (error) {
-      console.error('❌ Failed to check availability:', error);
+      console.error('Failed to check availability:', error);
       return { available: false, message: 'Error checking availability' };
     }
   }

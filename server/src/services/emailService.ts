@@ -17,14 +17,14 @@ class EmailService {
       const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
       
       if (missingVars.length > 0) {
-        console.error('❌ Missing email environment variables:', missingVars);
+        console.error('Missing email environment variables:', missingVars);
         return;
       }
 
-      console.log('📧 Initializing email service with:');
-      console.log('   Host:', process.env.MAIL_HOST);
-      console.log('   Port:', process.env.MAIL_PORT);
-      console.log('   Username:', process.env.MAIL_USERNAME);
+      console.log('Initializing email service with:');
+      console.log('Host:', process.env.MAIL_HOST);
+      console.log('Port:', process.env.MAIL_PORT);
+      console.log('Username:', process.env.MAIL_USERNAME);
 
       this.transporter = nodemailer.createTransport({
         host: process.env.MAIL_HOST,
@@ -40,22 +40,22 @@ class EmailService {
 
       this.verifyConnection();
     } catch (error) {
-      console.error('❌ Email service initialization failed:', error);
+      console.error('Email service initialization failed:', error);
     }
   }
 
   private async verifyConnection(): Promise<void> {
     if (!this.transporter) {
-      console.error('❌ Email transporter not initialized');
+      console.error('Email transporter not initialized');
       return;
     }
 
     try {
       await this.transporter.verify();
-      console.log('✅ Email service connected successfully to Mailtrap');
+      console.log('Email service connected successfully to Mailtrap');
       this.initialized = true;
     } catch (error) {
-      console.error('❌ Email service connection failed:', error);
+      console.error('Email service connection failed:', error);
       this.initialized = false;
     }
   }
@@ -79,10 +79,10 @@ class EmailService {
 
     try {
       const info = await this.transporter.sendMail(mailOptions);
-      console.log(`✅ Order confirmation email sent to ${customer.email}`);
-      console.log(`📧 Message ID: ${info.messageId}`);
+      console.log(`Order confirmation email sent to ${customer.email}`);
+      console.log(`Message ID: ${info.messageId}`);
     } catch (error) {
-      console.error('❌ Failed to send confirmation email:', error);
+      console.error('Failed to send confirmation email:', error);
       throw error;
     }
   }
@@ -106,10 +106,10 @@ class EmailService {
 
     try {
       const info = await this.transporter.sendMail(mailOptions);
-      console.log(`✅ Order failure email sent to ${customer.email}`);
-      console.log(`📧 Message ID: ${info.messageId}`);
+      console.log(`Order failure email sent to ${customer.email}`);
+      console.log(`Message ID: ${info.messageId}`);
     } catch (error) {
-      console.error('❌ Failed to send failure email:', error);
+      console.error('Failed to send failure email:', error);
       throw error;
     }
   }
@@ -184,7 +184,7 @@ class EmailService {
 
       return template;
     } catch (error) {
-      console.error(`❌ Error rendering template ${templateName}:`, error);
+      console.error(`Error rendering template ${templateName}:`, error);
       throw new Error(`Failed to render email template: ${templateName}`);
     }
   }

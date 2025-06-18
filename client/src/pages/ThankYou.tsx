@@ -309,10 +309,10 @@ const ThankYou: React.FC = () => {
               <div className="p-6">
                 <h3 className="text-lg font-semibold text-red-800 mb-4">Need Help?</h3>
                 <div className="space-y-2 text-sm text-red-700">
-                  <p>❌ Your payment could not be processed</p>
-                  <p>💳 Please check your payment method and try again</p>
-                  <p>📞 Contact support if you continue to have issues</p>
-                  <p>🔄 You can place a new order anytime</p>
+                  <p>Your payment could not be processed</p>
+                  <p>Please check your payment method and try again</p>
+                  <p>Contact support if you continue to have issues</p>
+                  <p>You can place a new order anytime</p>
                 </div>
               </div>
             </Card>
@@ -351,9 +351,9 @@ const ThankYou: React.FC = () => {
                 Our customer service team is here to help with any questions about your order.
               </p>
               <div className="text-sm text-blue-600 space-y-1">
-                <p>📧 Email: support@ecommerce.com</p>
-                <p>📞 Phone: 1-800-ECOMMERCE</p>
-                <p>💬 Live Chat: Available 24/7</p>
+                <p>Email: support@ecommerce.com</p>
+                <p>Phone: 1-800-ECOMMERCE</p>
+                <p>Live Chat: Available 24/7</p>
               </div>
             </div>
           </Card>

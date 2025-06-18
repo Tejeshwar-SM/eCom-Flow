@@ -67,7 +67,7 @@ const Checkout: React.FC = () => {
         transactionResult: paymentResult.data?.result || 'error',
       };
 
-      console.log('📤 Final order payload:', JSON.stringify(orderData, null, 2));
+      console.log('Final order payload:', JSON.stringify(orderData, null, 2));
 
       // Step 3: Submit order
       toast.loading('Creating order...', { id: 'order-creation' });
@@ -94,7 +94,7 @@ const Checkout: React.FC = () => {
       }
 
     } catch (err) {
-      console.error('❌ Order submission error:', err);
+      console.error('Order submission error:', err);
       
       const errorMessage = err instanceof Error ? err.message : 'Failed to process order';
       setError(errorMessage);

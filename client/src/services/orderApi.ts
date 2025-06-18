@@ -25,13 +25,13 @@ export const orderApi = {
       customer: {
         fullName: orderData.customer.fullName.trim(),
         email: orderData.customer.email.trim().toLowerCase(),
-        phone: orderData.customer.phone, // ✅ KEEP INTERNATIONAL FORMAT - DON'T STRIP!
+        phone: orderData.customer.phone, //KEEP INTERNATIONAL FORMAT - DON'T STRIP!
         address: {
           street: orderData.customer.address.street.trim(),
           city: orderData.customer.address.city.trim(),
           state: orderData.customer.address.state.trim(),
           zipCode: orderData.customer.address.zipCode.trim(),
-          country: orderData.customer.address.country.trim() || 'India' // ✅ Default to India
+          country: orderData.customer.address.country.trim() || 'India' //Default to India
         }
       },
       product: {

@@ -9,7 +9,6 @@ import { errorHandler } from "./middleware/errorHandler";
 import productRoutes from "./routes/products";
 import orderRoutes from "./routes/orders";
 import paymentRoutes from "./routes/payment";
-import { IOrder, ICustomer } from "./types";
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -44,7 +43,6 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// Add this debug endpoint to your server.ts (after your existing routes)
 app.get('/api/debug/products', async (req, res) => {
   try {
     const { default: Product } = await import('../src/models/Product');

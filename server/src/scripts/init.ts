@@ -6,7 +6,7 @@ import { Helpers } from '../utils/helpers';
 class InitScript {
   static async initialize(): Promise<void> {
     try {
-      Helpers.logInfo('🚀 Initializing application...');
+      Helpers.logInfo('Initializing application...');
       
       // Connect to database
       await connectDB();
@@ -14,7 +14,7 @@ class InitScript {
       // Get database stats
       const stats = await DatabaseUtils.getDbStats();
       if (stats) {
-        Helpers.logInfo('📊 Database Stats:', stats);
+        Helpers.logInfo('Database Stats:', stats);
       }
       
       // Seed data if needed
@@ -23,10 +23,10 @@ class InitScript {
       // Verify email configuration
       this.verifyEmailConfig();
       
-      Helpers.logSuccess('✅ Application initialization completed');
+      Helpers.logSuccess('Application initialization completed');
       
     } catch (error) {
-      Helpers.logError('❌ Initialization failed:', error);
+      Helpers.logError('Initialization failed:', error);
       process.exit(1);
     }
   }
@@ -36,10 +36,10 @@ class InitScript {
     const missingEnvs = requiredEmailEnvs.filter(env => !process.env[env]);
     
     if (missingEnvs.length > 0) {
-      Helpers.logError(`⚠️  Missing email configuration: ${missingEnvs.join(', ')}`);
-      Helpers.logInfo('📧 Email functionality may not work properly');
+      Helpers.logError(`Missing email configuration: ${missingEnvs.join(', ')}`);
+      Helpers.logInfo('Email functionality may not work properly');
     } else {
-      Helpers.logSuccess('📧 Email configuration verified');
+      Helpers.logSuccess('Email configuration verified');
     }
   }
 }

@@ -25,7 +25,7 @@ export const validateObjectId = (field: string) => {
   });
 };
 
-// ✅ Enhanced postal code validation for multiple countries
+//Enhanced postal code validation for multiple countries
 const validatePostalCode = (value: string, { req }: any) => {
   if (!value || value.trim() === '') {
     throw new Error('Postal code is required');
@@ -82,7 +82,7 @@ const validatePostalCode = (value: string, { req }: any) => {
   return true;
 };
 
-// ✅ Enhanced phone validation for international numbers
+//Enhanced phone validation for international numbers
 const validateInternationalPhone = (value: string) => {
   if (!value || value.trim() === '') {
     throw new Error('Phone number is required');
@@ -149,7 +149,7 @@ const validateExpiryDate = (value: string) => {
   return true;
 };
 
-// ✅ Updated order validation with international support
+//Updated order validation with international support
 export const validateCreateOrder = [
   // Customer validation
   body('customer.fullName')
@@ -163,7 +163,7 @@ export const validateCreateOrder = [
     .normalizeEmail()
     .withMessage('Valid email is required'),
   
-  // ✅ Updated phone validation for international numbers
+  //Updated phone validation for international numbers
   body('customer.phone')
     .custom(validateInternationalPhone),
   
@@ -185,7 +185,7 @@ export const validateCreateOrder = [
     .isLength({ min: 2, max: 100 })
     .withMessage('State/Province must be between 2 and 100 characters'),
   
-  // ✅ Updated postal code validation for multiple countries
+  //Updated postal code validation for multiple countries
   body('customer.address.zipCode')
     .custom(validatePostalCode),
   

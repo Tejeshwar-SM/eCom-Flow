@@ -3,7 +3,7 @@ import { ICustomer, IAddress } from '../types';
 
 interface ICustomerDocument extends ICustomer, Document {}
 
-// ✅ Custom validator for international postal codes
+//Custom validator for international postal codes
 const validatePostalCode = function(this: IAddress, value: string): boolean {
   if (!value || value.trim() === '') return false;
   
@@ -47,7 +47,7 @@ const validatePostalCode = function(this: IAddress, value: string): boolean {
   return /^[A-Z0-9\s-]{3,10}$/i.test(cleanValue);
 };
 
-// ✅ Custom validator for international phone numbers
+//Custom validator for international phone numbers
 const validatePhone = function(value: string): boolean {
   if (!value || value.trim() === '') return false;
   
@@ -76,7 +76,7 @@ const AddressSchema = new Schema<IAddress>({
     trim: true,
     maxlength: [100, 'State/Province name cannot exceed 100 characters']
   },
-  // ✅ Updated postal code validation for international support
+  //Updated postal code validation for international support
   zipCode: {
     type: String,
     required: [true, 'Postal code is required'],
@@ -91,12 +91,12 @@ const AddressSchema = new Schema<IAddress>({
       }
     }
   },
-  // ✅ Updated country default
+  //Updated country default
   country: {
     type: String,
     required: [true, 'Country is required'],
     trim: true,
-    default: 'India', // ✅ Changed from 'United States' to 'India'
+    default: 'India', //Changed from 'United States' to 'India'
     maxlength: [100, 'Country name cannot exceed 100 characters']
   }
 }, { _id: false });
@@ -119,7 +119,7 @@ const CustomerSchema = new Schema<ICustomerDocument>({
       'Please enter a valid email address'
     ]
   },
-  // ✅ Updated phone validation for international support
+  //Updated phone validation for international support
   phone: {
     type: String,
     required: [true, 'Phone number is required'],
@@ -143,7 +143,7 @@ const CustomerSchema = new Schema<ICustomerDocument>({
 CustomerSchema.index({ email: 1 });
 CustomerSchema.index({ phone: 1 });
 
-// ✅ Updated virtual for formatted address with international support
+//Updated virtual for formatted address with international support
 CustomerSchema.virtual('formattedAddress').get(function() {
   const addr = this.address;
   return `${addr.street}, ${addr.city}, ${addr.state} ${addr.zipCode}, ${addr.country}`;
